@@ -1,6 +1,6 @@
 from flask import Flask
 from app.extensions import db, socketio, migrate
-from app.config import Config
+from config import Config
 
 def create_app():
     app=Flask(__name__)
@@ -15,5 +15,5 @@ def create_app():
     app.register_blueprint(rooms_bp)
 
     from app import events
-    
+
     return app
