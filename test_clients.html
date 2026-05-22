@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Chat Test Client</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+
+<body>
+    <h1>WebSocket Chat Tester</h1>
+
+    <div>
+        <input id="username" placeholder="Your username" value="alice">
+        <input id="room" placeholder="Room name" value="general">
+        <button onclick="joinRoom()">Join Room</button>
+        <button onclick="leaveRoom()">Leave Room</button>
+    </div>
+
+    <div>
+        <input id="message" placeholder="Type a message">
+        <button onclick="sendMessage()">Send Message</button>
+    </div>
+
+    <div>
+        <button onclick="sendReaction('👍')">👍</button>
+        <button onclick="sendReaction('❤️')">❤️</button>
+        <button onclick="sendReaction('😂')">😂</button>
+    </div>
+
+    <div id="events"
+        style="border: 1px solid black; height: 400px; overflow-y: scroll; padding: 10px; margin-top: 20px;">
+        <p><strong>Events will appear here...</strong></p>
+    </div>
+
+    <script>
+        const socket = io("http://127.0.0.1:5000");
+        const eventsDiv = document.getElementById("events");
+
+        function log(msg) {
+            const p = document.createElement("p");
+            p.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong> - ${msg}`;
+            eventsDiv.appendChild(p);
+            eventsDiv.scrollTop = eventsDiv.scrollHeight;
+        }
+
+        socket.on("connect", () => log("✅ Connected to server"));
+        socket.on("disconnect", () => log("❌ Disconnected from server"));
+        socket.on("error", (data) => log(`⚠️ Error: ${data.msg}`));
+        socket.on("user_joined", (data) => log(`👋 ${data.username} joined. Active: ${data.active_users.join(", ")}`));
+        socket.on("user_left", (data) => log(`👋 ${data.username} left. Active: ${data.active_users.join(", ")}`));
+        socket.on("new_message", (data) => log(`💬 <strong>${data.sender_username}:</strong> ${data.content}`));
+        socket.on("new_reaction", (data) => log(`${data.emoji} from ${data.username}`));
+
+        function joinRoom() {
+            const username = document.getElementById("username").value;
+            const room = document.getElementById("room").value;
+            socket.emit("join", { username, room });
+            log(`📥 Sent join event for ${username} in ${room}`);
+        }
+
+        function leaveRoom() {
+            const username = document.getElementById("username").value;
+            const room = document.getElementById("room").value;
+            socket.emit("leave", { username, room });
+            log(`📤 Sent leave event`);
+        }
+
+        function sendMessage() {
+            const username = document.getElementById("username").value;
+            const room = document.getElementById("room").value;
+            const content = document.getElementById("message").value;
+            socket.emit("send_message", { username, room, content });
+            document.getElementById("message").value = "";
+        }
+
+        function sendReaction(emoji) {
+            const username = document.getElementById("username").value;
+            const room = document.getElementById("room").value;
+            socket.emit("react", { username, room, emoji });
+        }
+    </script>
+</body>
+
+</html>
